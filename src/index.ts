@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/server";
 import { createMcpHandler } from "agents/mcp/server";
 import { z } from "zod";
 
-function createServer() {
+function createServer(env: Env) {
 	const server = new McpServer({
 		name: "ARTPRO Email Sender",
 		version: "1.0.0",
@@ -25,13 +25,15 @@ function createServer() {
 				body: z
 					.string()
 					.min(1)
-					.describe("Plain text email body. The ARTPRO branded HTML signature is added automatically by the email service."),
+					.describe(
+						"Plain text email body. The ARTPRO branded HTML signature is added automatically by the email service.",
+					),
 			}),
 		},
 		async ({ to, subject, body }) => {
 			try {
-				const response = await fetch(
-					"https://artpro-email-sender.business-d2e.workers.dev/",
+				const response = await (env as any).EMAIL_SENDER.fetch(
+					"https://artpro-email-sender/",
 					{
 						method: "POST",
 						headers: {
@@ -86,10 +88,9 @@ function createServer() {
 	return server;
 }
 
-const handler = createMcpHandler(createServer);
-
 export default {
 	fetch(request: Request, env: Env, ctx: ExecutionContext) {
+		const handler = createMcpHandler(() => createServer(env));
 		return handler(request, env, ctx);
 	},
 } satisfies ExportedHandler<Env>;
