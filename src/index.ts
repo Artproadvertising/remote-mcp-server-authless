@@ -18,10 +18,19 @@ function createServer(env: Env) {
 					.string()
 					.email()
 					.describe("Verified recipient business email address"),
+
+				cc: z
+					.array(z.string().email())
+					.optional()
+					.describe(
+						"Optional CC recipient email addresses. For ARTPRO Business Development emails, include required internal CC recipients when applicable.",
+					),
+
 				subject: z
 					.string()
 					.min(1)
 					.describe("Email subject"),
+
 				body: z
 					.string()
 					.min(1)
@@ -30,7 +39,8 @@ function createServer(env: Env) {
 					),
 			}),
 		},
-		async ({ to, subject, body }) => {
+
+		async ({ to, cc, subject, body }) => {
 			try {
 				const response = await (env as any).EMAIL_SENDER.fetch(
 					"https://artpro-email-sender/",
@@ -41,6 +51,7 @@ function createServer(env: Env) {
 						},
 						body: JSON.stringify({
 							to,
+							cc,
 							subject,
 							body,
 						}),
